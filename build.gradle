@@ -1,5 +1,6 @@
 buildscript {
     repositories {
+        maven { url = "https://bmclapi2.bangbang93.com/maven" }
         maven { url = "http://files.minecraftforge.net/maven" }
         mavenCentral()
     }
@@ -17,6 +18,10 @@ archivesBaseName = "CopyEverything"
 minecraft {
     version = "1.7.10-10.13.4.1614-1.7.10"
     runDir = "run"
+}
+
+repositories {
+    maven { url = "https://bmclapi2.bangbang93.com/maven" }
 }
 
 dependencies {
