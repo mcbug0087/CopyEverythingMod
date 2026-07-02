@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "copyeverything",
+    "name": "CopyEverything",
+    "description": "A mod that adds copy saplings and copy chests to Minecraft.",
+    "version": "${version}",
+    "mcversion": "${mcversion}",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["Example"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]
