@@ -26,6 +26,24 @@ jobs:
         echo "GRADLE_HOME=$(pwd)/gradle-2.0" >> $GITHUB_ENV
         echo "$(pwd)/gradle-2.0/bin" >> $GITHUB_PATH
         
+    - name: Create Gradle cache directories
+      run: |
+        mkdir -p ~/.gradle/caches/minecraft
+        mkdir -p ~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10
+        
+    - name: Download Minecraft 1.7.10 jar
+      run: |
+        wget -q -O ~/.gradle/caches/minecraft/net/minecraft/client/1.7.10/client-1.7.10.jar https://bmclapi2.bangbang93.com/maven/net/minecraft/client/1.7.10/client-1.7.10.jar
+        wget -q -O ~/.gradle/caches/minecraft/net/minecraft/server/1.7.10/server-1.7.10.jar https://bmclapi2.bangbang93.com/maven/net/minecraft/server/1.7.10/server-1.7.10.jar
+        
+    - name: Download Forge MDK
+      run: |
+        wget -q -O ~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar https://bmclapi2.bangbang93.com/maven/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar
+        
+    - name: Download versions.json
+      run: |
+        wget -q -O ~/.gradle/caches/minecraft/versions.json https://bmclapi2.bangbang93.com/maven/net/minecraftforge/gradle/ForgeGradle/1.2-SNAPSHOT/versions.json || echo '{}' > ~/.gradle/caches/minecraft/versions.json
+        
     - name: Build with Gradle
       run: gradle build
       
