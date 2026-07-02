@@ -62,10 +62,18 @@ jobs:
           echo "Forge universal URL not available, will try ForgeGradle default"
         fi
         
-    - name: Prepare versions.json
+    - name: Start local HTTP server for versions.json
       run: |
-        mkdir -p ~/.gradle/caches/minecraft
-        echo '{"snapshot": "20240916","versions": [{"id": "1.7.10","time": "2014-05-14T16:07:00+00:00","releaseTime": "2014-05-14T16:07:00+00:00","type": "release"}]}' > ~/.gradle/caches/minecraft/versions.json
+        echo '{"snapshot": "20240916","versions": [{"id": "1.7.10","time": "2014-05-14T16:07:00+00:00","releaseTime": "2014-05-14T16:07:00+00:00","type": "release"}]}' > /tmp/versions.json
+        sudo python3 -m http.server 80 --directory /tmp &
+        echo $! > /tmp/http_server_pid
+        sleep 2
+        curl http://localhost/versions.json
+        
+    - name: Add hosts entry for export.mcpbot.bspk.rs
+      run: |
+        echo "127.0.0.1 export.mcpbot.bspk.rs" | sudo tee -a /etc/hosts
+        cat /etc/hosts | grep export.mcpbot.bspk.rs
         
     - name: Build with Gradle
       run: gradle build
