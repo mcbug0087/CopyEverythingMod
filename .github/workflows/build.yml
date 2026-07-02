@@ -22,6 +22,9 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x gradlew
       
+    - name: Download Gradle wrapper jar
+      run: curl -s -o gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-2.0-wrapper.jar
+      
     - name: Build with Gradle
       run: ./gradlew build
       
