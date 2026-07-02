@@ -19,14 +19,15 @@ jobs:
         java-version: '8'
         distribution: 'adopt'
         
-    - name: Make gradlew executable
-      run: chmod +x gradlew
-      
-    - name: Download Gradle wrapper jar
-      run: curl -s -o gradle/wrapper/gradle-wrapper.jar https://services.gradle.org/distributions/gradle-2.0-wrapper.jar
-      
+    - name: Install Gradle 2.0
+      run: |
+        wget -q https://services.gradle.org/distributions/gradle-2.0-bin.zip
+        unzip -q gradle-2.0-bin.zip
+        echo "GRADLE_HOME=$(pwd)/gradle-2.0" >> $GITHUB_ENV
+        echo "$(pwd)/gradle-2.0/bin" >> $GITHUB_PATH
+        
     - name: Build with Gradle
-      run: ./gradlew build
+      run: gradle build
       
     - name: Upload artifact
       uses: actions/upload-artifact@v4
