@@ -92,6 +92,36 @@ jobs:
         echo "Client jar size: $(wc -c < /tmp/mcpbot/Minecraft.Download/versions/1.7.10/1.7.10.jar) bytes"
         echo "Server jar size: $(wc -c < /tmp/mcpbot/Minecraft.Download/versions/1.7.10/minecraft_server.1.7.10.jar) bytes"
         
+        # Download 1.7.10.json for getVersionJson task
+        download_with_retry "https://bmclapi2.bangbang93.com/version/1.7.10" \
+          "/tmp/mcpbot/Minecraft.Download/versions/1.7.10/1.7.10.json" 5 || true
+        
+        # Download fernflower for downloadMcpTools task
+        # fernflower-fix-1.0.zip is just a fernflower jar renamed (jar = zip)
+        FERNFLOWER_URLS=(
+          "https://maven.minecraftforge.net/net/minecraftforge/fernflower/1.0/fernflower-1.0.jar"
+          "https://bmclapi2.bangbang93.com/maven/net/minecraftforge/fernflower/1.0/fernflower-1.0.jar"
+          "https://maven.minecraftforge.net/net/minecraftforge/fernflower/0.8.6/fernflower-0.8.6.jar"
+          "https://bmclapi2.bangbang93.com/maven/net/minecraftforge/fernflower/0.8.6/fernflower-0.8.6.jar"
+        )
+        FERNFLOWER_DL=false
+        for url in "${FERNFLOWER_URLS[@]}"; do
+          echo "Trying fernflower from: $url"
+          if curl -sL --connect-timeout 30 --max-time 120 -o "/tmp/mcpbot/fernflower-fix-1.0.zip" "$url"; then
+            if [ -s "/tmp/mcpbot/fernflower-fix-1.0.zip" ]; then
+              echo "Successfully downloaded fernflower from: $url"
+              echo "Fernflower size: $(wc -c < /tmp/mcpbot/fernflower-fix-1.0.zip) bytes"
+              FERNFLOWER_DL=true
+              break
+            fi
+          fi
+          rm -f "/tmp/mcpbot/fernflower-fix-1.0.zip"
+        done
+        if [ "$FERNFLOWER_DL" = false ]; then
+          echo "::error::Failed to download fernflower from all sources"
+          exit 1
+        fi
+        
     - name: Download real forge.json and versions.json
       run: |
         download_with_retry() {
@@ -147,6 +177,8 @@ jobs:
         curl -sI http://localhost/Minecraft.Download/versions/1.7.10/1.7.10.jar | head -5
         echo "Testing server jar (HEAD):"
         curl -sI http://localhost/Minecraft.Download/versions/1.7.10/minecraft_server.1.7.10.jar | head -5
+        echo "Testing fernflower (HEAD):"
+        curl -sI http://localhost/fernflower-fix-1.0.zip | head -5
         
     - name: Add hosts entries
       run: |
