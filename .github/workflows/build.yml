@@ -62,18 +62,26 @@ jobs:
           echo "Forge universal URL not available, will try ForgeGradle default"
         fi
         
-    - name: Start local HTTP server for versions.json
+    - name: Prepare MCP mappings cache
       run: |
-        echo '{"snapshot": "20240916","versions": [{"id": "1.7.10","time": "2014-05-14T16:07:00+00:00","releaseTime": "2014-05-14T16:07:00+00:00","type": "release"}]}' > /tmp/versions.json
-        sudo python3 -m http.server 80 --directory /tmp &
-        echo $! > /tmp/http_server_pid
+        # ForgeGradle parses this as Map<String, Map<String, int[]>>
+        # Top-level keys: channel names (snapshot, stable)
+        # Inner keys: MC versions (1.7.10)
+        # Values: int arrays of MCP mapping build numbers
+        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > ~/.gradle/caches/minecraft/McpMappings.json
+        echo "fake-etag-12345" > ~/.gradle/caches/minecraft/McpMappings.json.etag
+        
+    - name: Start local HTTP server for mcpbot
+      run: |
+        mkdir -p /tmp/mcpbot
+        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > /tmp/mcpbot/versions.json
+        sudo python3 -m http.server 80 --directory /tmp/mcpbot &
         sleep 2
         curl http://localhost/versions.json
         
     - name: Add hosts entry for export.mcpbot.bspk.rs
       run: |
         echo "127.0.0.1 export.mcpbot.bspk.rs" | sudo tee -a /etc/hosts
-        cat /etc/hosts | grep export.mcpbot.bspk.rs
         
     - name: Build with Gradle
       run: gradle build
