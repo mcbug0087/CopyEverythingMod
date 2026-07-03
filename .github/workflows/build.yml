@@ -62,26 +62,32 @@ jobs:
           echo "Forge universal URL not available, will try ForgeGradle default"
         fi
         
-    - name: Prepare MCP mappings cache
-      run: |
-        # ForgeGradle parses this as Map<String, Map<String, int[]>>
-        # Top-level keys: channel names (snapshot, stable)
-        # Inner keys: MC versions (1.7.10)
-        # Values: int arrays of MCP mapping build numbers
-        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > ~/.gradle/caches/minecraft/McpMappings.json
-        echo "fake-etag-12345" > ~/.gradle/caches/minecraft/McpMappings.json.etag
-        
     - name: Start local HTTP server for mcpbot
       run: |
         mkdir -p /tmp/mcpbot
-        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > /tmp/mcpbot/versions.json
+        # ForgeGradle parses versions.json as Map<String, Map<String, int[]>>
+        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]}}' > /tmp/mcpbot/versions.json
+        # Provide forge.json to avoid 301 redirects
+        echo '{"1.7.10":{"10.13.4.1614":"2015-06-15T00:00:00+00:00"}}' > /tmp/mcpbot/forge.json
+        # Also provide at the maven path
+        mkdir -p /tmp/mcpbot/maven/net/minecraftforge/forge
+        ln -sf /tmp/mcpbot/forge.json /tmp/mcpbot/maven/net/minecraftforge/forge/json
         sudo python3 -m http.server 80 --directory /tmp/mcpbot &
         sleep 2
         curl http://localhost/versions.json
+        curl http://localhost/maven/net/minecraftforge/forge/json
         
-    - name: Add hosts entry for export.mcpbot.bspk.rs
+    - name: Add hosts entries
       run: |
         echo "127.0.0.1 export.mcpbot.bspk.rs" | sudo tee -a /etc/hosts
+        echo "127.0.0.1 files.minecraftforge.net" | sudo tee -a /etc/hosts
+        
+    - name: Pre-cache forge.json
+      run: |
+        mkdir -p ~/.gradle/caches/minecraft
+        # Provide a minimal forge.json to avoid 301 redirects from files.minecraftforge.net
+        # Format: {"mcVersion": {"forgeVersion": "timestamp"}}
+        echo '{"1.7.10":{"10.13.4.1614":"2015-06-15T00:00:00+00:00"}}' > ~/.gradle/caches/minecraft/forge.json
         
     - name: Build with Gradle
       run: gradle build
