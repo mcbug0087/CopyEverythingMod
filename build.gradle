@@ -1,7 +1,9 @@
 buildscript {
     repositories {
         maven { url = "https://bmclapi2.bangbang93.com/maven" }
-        maven { url = "http://files.minecraftforge.net/maven" }
+        maven { url = "https://maven.minecraftforge.net/" }
+        maven { url = "https://repo1.maven.org/maven2" }
+        maven { url = "https://maven.aliyun.com/repository/public" }
         mavenCentral()
     }
     dependencies {
@@ -22,6 +24,9 @@ minecraft {
 
 repositories {
     maven { url = "https://bmclapi2.bangbang93.com/maven" }
+    maven { url = "https://maven.minecraftforge.net/" }
+    maven { url = "https://repo1.maven.org/maven2" }
+    maven { url = "https://maven.aliyun.com/repository/public" }
 }
 
 dependencies {
