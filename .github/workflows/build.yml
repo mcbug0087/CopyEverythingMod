@@ -31,6 +31,7 @@ jobs:
         mkdir -p ~/.gradle/caches/minecraft/net/minecraft/client/1.7.10
         mkdir -p ~/.gradle/caches/minecraft/net/minecraft/server/1.7.10
         mkdir -p ~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10
+        mkdir -p ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12
         
     - name: Download Minecraft client jar
       run: |
@@ -62,10 +63,21 @@ jobs:
           echo "Forge universal URL not available, will try ForgeGradle default"
         fi
         
-    - name: Start local HTTP server for versions.json
+    - name: Download MCP stable_12 mapping
+      run: |
+        URL="https://bmclapi2.bangbang93.com/maven/de/oceanlabs/mcp/mcp_stable/12/mcp_stable-12.zip"
+        if curl -sL --head "$URL" | grep -q "200"; then
+          curl -sL -o ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12/mcp_stable-12.zip "$URL"
+          echo "MCP stable_12 downloaded successfully"
+          ls -la ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12/
+        else
+          echo "MCP URL not available, will try ForgeGradle default"
+        fi
+        
+    - name: Start local HTTP server for MCP versions
       run: |
         cat > /tmp/versions.json << 'EOF'
-{"snapshot":{"20180101":"20180101"},"stable":{"12":"20180101"},"latest":"stable_12"}
+{"snapshot":{"20180101":{"mcversion":"1.7.10","timestamp":"20180101"}},"stable":{"12":{"mcversion":"1.7.10","timestamp":"20180101"}},"latest":{"1.7.10":"stable_12"}}
 EOF
         sudo python3 -m http.server 80 --directory /tmp &
         echo $! > /tmp/http_server_pid
