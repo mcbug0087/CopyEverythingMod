@@ -13,9 +13,11 @@ public class CopyChestContainer extends Container {
     
     private CopyChestTileEntity tileEntity;
     private int currentPage = 0;
+    private InventoryPlayer playerInventory;
 
     public CopyChestContainer(InventoryPlayer playerInventory, CopyChestTileEntity tileEntity) {
         this.tileEntity = tileEntity;
+        this.playerInventory = playerInventory;
         
         for (int i = 0; i < SLOTS_PER_PAGE && i + currentPage * SLOTS_PER_PAGE < tileEntity.getSizeInventory(); i++) {
             int x = 8 + (i % 9) * 18;
@@ -46,7 +48,6 @@ public class CopyChestContainer extends Container {
                 addSlotToContainer(new Slot(tileEntity, i + currentPage * SLOTS_PER_PAGE, x, y));
             }
             
-            InventoryPlayer playerInventory = (InventoryPlayer) tileEntity.getOwner();
             if (playerInventory != null) {
                 for (int i = 0; i < 3; i++) {
                     for (int j = 0; j < 9; j++) {
