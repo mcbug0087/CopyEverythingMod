@@ -4,6 +4,7 @@ import com.example.copyeverything.tileentity.CopyChestTileEntity;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StatCollector;
 import org.lwjgl.opengl.GL11;
 
@@ -12,6 +13,8 @@ public class CopyChestGui extends GuiContainer {
     private GuiButton prevButton;
     private GuiButton nextButton;
     private CopyChestContainer container;
+    private static final ResourceLocation TEXTURE_GENERIC = new ResourceLocation("textures/gui/container/generic_54.png");
+    private static final ResourceLocation TEXTURE_WIDGETS = new ResourceLocation("textures/gui/widgets.png");
 
     public CopyChestGui(InventoryPlayer playerInventory, CopyChestTileEntity tileEntity) {
         super(new CopyChestContainer(playerInventory, tileEntity));
@@ -61,7 +64,7 @@ public class CopyChestGui extends GuiContainer {
     @Override
     protected void drawGuiContainerBackgroundLayer(float partialTicks, int mouseX, int mouseY) {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        mc.getTextureManager().bindTexture(net.minecraft.util.ResourceLocation("textures/gui/container/generic_54.png"));
+        mc.getTextureManager().bindTexture(TEXTURE_GENERIC);
         int k = (width - xSize) / 2;
         int l = (height - ySize) / 2;
         drawTexturedModalRect(k, l, 0, 0, xSize, ySize);
@@ -72,7 +75,7 @@ public class CopyChestGui extends GuiContainer {
         super.drawScreen(mouseX, mouseY, partialTicks);
         
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-        mc.getTextureManager().bindTexture(net.minecraft.util.ResourceLocation("textures/gui/widgets.png"));
+        mc.getTextureManager().bindTexture(TEXTURE_WIDGETS);
         
         prevButton.drawButton(mc, mouseX, mouseY);
         nextButton.drawButton(mc, mouseX, mouseY);

@@ -64,11 +64,21 @@ public class CopyChestTileEntity extends TileEntity implements IInventory {
         int count = 0;
         for (int i = 0; i < SLOT_COUNT; i++) {
             ItemStack stack = inventory[i];
-            if (stack != null && ItemStack.areItemsEqual(stack, targetStack) && ItemStack.areItemStackTagsEqual(stack, targetStack)) {
+            if (stack != null && areItemStacksEqual(stack, targetStack)) {
                 count += stack.stackSize;
             }
         }
         return count;
+    }
+    
+    private boolean areItemStacksEqual(ItemStack stack1, ItemStack stack2) {
+        if (stack1 == stack2) return true;
+        if (stack1 == null || stack2 == null) return false;
+        if (stack1.getItem() != stack2.getItem()) return false;
+        if (stack1.getItemDamage() != stack2.getItemDamage()) return false;
+        if (stack1.stackTagCompound == stack2.stackTagCompound) return true;
+        if (stack1.stackTagCompound == null || stack2.stackTagCompound == null) return false;
+        return stack1.stackTagCompound.equals(stack2.stackTagCompound);
     }
 
     private int findEmptySlot() {
