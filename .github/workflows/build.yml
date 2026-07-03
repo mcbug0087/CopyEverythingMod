@@ -162,21 +162,56 @@ jobs:
           echo "::warning::Forge universal download failed, will try ForgeGradle default"
         fi
         
-    - name: Start local HTTP server for mcpbot and forge
+    - name: Download real forge.json and versions.json
       run: |
+        download_with_retry() {
+          local url="$1"
+          local output="$2"
+          local max_retries="${3:-5}"
+          local retry=0
+          while [ $retry -lt $max_retries ]; do
+            retry=$((retry + 1))
+            echo "Attempt $retry/$max_retries: Downloading $url"
+            if curl -sL --connect-timeout 30 --max-time 300 -o "$output" "$url"; then
+              if [ -s "$output" ]; then
+                echo "Successfully downloaded to $output"
+                return 0
+              else
+                echo "Downloaded file is empty, retrying..."
+              fi
+            else
+              echo "Download failed (curl exit code: $?), retrying..."
+            fi
+            rm -f "$output"
+            sleep $((retry * 5))
+          done
+          echo "Failed to download $url after $max_retries attempts"
+          return 1
+        }
+        
         mkdir -p /tmp/mcpbot/maven/net/minecraftforge/forge
-        # ForgeGradle parses versions.json as Map<String, Map<String, int[]>>
-        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]}}' > /tmp/mcpbot/versions.json
-        # forge.json format: {"mcversion": {"forgeversion": "timestamp"}}
-        # The forge version key must match exactly what's in build.gradle
-        echo '{"1.7.10":{"10.13.4.1614-1.7.10":"2015-04-24T17:36:46+00:00"}}' > /tmp/mcpbot/maven/net/minecraftforge/forge/json
+        
+        # Download the real forge.json from BMCLAPI (same format as files.minecraftforge.net)
+        download_with_retry "https://bmclapi2.bangbang93.com/maven/net/minecraftforge/forge/json" "/tmp/mcpbot/maven/net/minecraftforge/forge/json" 5
+        echo "forge.json size: $(wc -c < /tmp/mcpbot/maven/net/minecraftforge/forge/json) bytes"
+        
+        # Download the real versions.json from BMCLAPI for MCP mappings
+        download_with_retry "https://bmclapi2.bangbang93.com/maven/de/oceanlabs/mcp/versions.json" "/tmp/mcpbot/versions.json" 5
+        echo "versions.json size: $(wc -c < /tmp/mcpbot/versions.json) bytes"
+        
+        # Verify JSON is valid
+        python3 -c "import json; json.load(open('/tmp/mcpbot/maven/net/minecraftforge/forge/json')); print('forge.json is valid JSON')"
+        python3 -c "import json; json.load(open('/tmp/mcpbot/versions.json')); print('versions.json is valid JSON')"
+        
+    - name: Start local HTTP server
+      run: |
         sudo python3 -m http.server 80 --directory /tmp/mcpbot &
         sleep 2
         echo "Testing versions.json:"
-        curl -s http://localhost/versions.json
+        curl -s http://localhost/versions.json | head -c 200
         echo ""
         echo "Testing forge.json:"
-        curl -s http://localhost/maven/net/minecraftforge/forge/json
+        curl -s http://localhost/maven/net/minecraftforge/forge/json | head -c 200
         echo ""
         
     - name: Add hosts entries
