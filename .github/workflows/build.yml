@@ -64,9 +64,7 @@ jobs:
         
     - name: Start local HTTP server for versions.json
       run: |
-        cat > /tmp/versions.json << 'EOF'
-{"snapshot":{"20180101":"20180101"},"stable":{"12":"20180101"},"latest":"stable_12"}
-EOF
+        echo '{"snapshot": "20240916","versions": [{"id": "1.7.10","time": "2014-05-14T16:07:00+00:00","releaseTime": "2014-05-14T16:07:00+00:00","type": "release"}]}' > /tmp/versions.json
         sudo python3 -m http.server 80 --directory /tmp &
         echo $! > /tmp/http_server_pid
         sleep 2
