@@ -31,7 +31,6 @@ jobs:
         mkdir -p ~/.gradle/caches/minecraft/net/minecraft/client/1.7.10
         mkdir -p ~/.gradle/caches/minecraft/net/minecraft/server/1.7.10
         mkdir -p ~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10
-        mkdir -p ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12
         
     - name: Download Minecraft client jar
       run: |
@@ -63,31 +62,26 @@ jobs:
           echo "Forge universal URL not available, will try ForgeGradle default"
         fi
         
-    - name: Download MCP stable_12 mapping
+    - name: Prepare MCP mappings cache
       run: |
-        URL="https://bmclapi2.bangbang93.com/maven/de/oceanlabs/mcp/mcp_stable/12/mcp_stable-12.zip"
-        if curl -sL --head "$URL" | grep -q "200"; then
-          curl -sL -o ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12/mcp_stable-12.zip "$URL"
-          echo "MCP stable_12 downloaded successfully"
-          ls -la ~/.gradle/caches/minecraft/de/oceanlabs/mcp/mcp_stable/12/
-        else
-          echo "MCP URL not available, will try ForgeGradle default"
-        fi
+        # ForgeGradle parses this as Map<String, Map<String, int[]>>
+        # Top-level keys: channel names (snapshot, stable)
+        # Inner keys: MC versions (1.7.10)
+        # Values: int arrays of MCP mapping build numbers
+        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > ~/.gradle/caches/minecraft/McpMappings.json
+        echo "fake-etag-12345" > ~/.gradle/caches/minecraft/McpMappings.json.etag
         
-    - name: Start local HTTP server for MCP versions
+    - name: Start local HTTP server for mcpbot
       run: |
-        cat > /tmp/versions.json << 'EOF'
-{"snapshot":{"20180101":{"mcversion":"1.7.10","timestamp":"20180101"}},"stable":{"12":{"mcversion":"1.7.10","timestamp":"20180101"}},"latest":{"1.7.10":"stable_12"}}
-EOF
-        sudo python3 -m http.server 80 --directory /tmp &
-        echo $! > /tmp/http_server_pid
+        mkdir -p /tmp/mcpbot
+        echo '{"snapshot":{"1.7.10":[20240916]},"stable":{"1.7.10":[20240916]},"stable_22":{"1.7.10":[20240916]}}' > /tmp/mcpbot/versions.json
+        sudo python3 -m http.server 80 --directory /tmp/mcpbot &
         sleep 2
         curl http://localhost/versions.json
         
     - name: Add hosts entry for export.mcpbot.bspk.rs
       run: |
         echo "127.0.0.1 export.mcpbot.bspk.rs" | sudo tee -a /etc/hosts
-        cat /etc/hosts | grep export.mcpbot.bspk.rs
         
     - name: Build with Gradle
       run: gradle build
