@@ -51,13 +51,7 @@ jobs:
         echo "GRADLE_HOME=$(pwd)/gradle-2.0" >> $GITHUB_ENV
         echo "$(pwd)/gradle-2.0/bin" >> $GITHUB_PATH
         
-    - name: Create Gradle cache directories
-      run: |
-        mkdir -p ~/.gradle/caches/minecraft/net/minecraft/client/1.7.10
-        mkdir -p ~/.gradle/caches/minecraft/net/minecraft/server/1.7.10
-        mkdir -p ~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10
-        
-    - name: Download Minecraft client jar
+    - name: Download Minecraft client/server jars to local mirror
       run: |
         download_with_retry() {
           local url="$1"
@@ -84,83 +78,19 @@ jobs:
           return 1
         }
         
-        URL="https://bmclapi2.bangbang93.com/version/1.7.10/client"
-        OUTPUT=~/.gradle/caches/minecraft/net/minecraft/client/1.7.10/client-1.7.10.jar
-        if download_with_retry "$URL" "$OUTPUT" 5; then
-          echo "Client downloaded successfully"
-        else
-          echo "::warning::Client download failed, will try ForgeGradle default"
-        fi
+        # Create directory structure for s3.amazonaws.com/Minecraft.Download
+        mkdir -p /tmp/mcpbot/Minecraft.Download/versions/1.7.10
         
-    - name: Download Minecraft server jar
-      run: |
-        download_with_retry() {
-          local url="$1"
-          local output="$2"
-          local max_retries="${3:-5}"
-          local retry=0
-          while [ $retry -lt $max_retries ]; do
-            retry=$((retry + 1))
-            echo "Attempt $retry/$max_retries: Downloading $url"
-            if curl -sL --connect-timeout 30 --max-time 300 -o "$output" "$url"; then
-              if [ -s "$output" ]; then
-                echo "Successfully downloaded to $output"
-                return 0
-              else
-                echo "Downloaded file is empty, retrying..."
-              fi
-            else
-              echo "Download failed (curl exit code: $?), retrying..."
-            fi
-            rm -f "$output"
-            sleep $((retry * 5))
-          done
-          echo "Failed to download $url after $max_retries attempts"
-          return 1
-        }
+        # Download client jar - ForgeGradle expects 1.7.10.jar
+        download_with_retry "https://bmclapi2.bangbang93.com/version/1.7.10/client" \
+          "/tmp/mcpbot/Minecraft.Download/versions/1.7.10/1.7.10.jar" 5
         
-        URL="https://bmclapi2.bangbang93.com/version/1.7.10/server"
-        OUTPUT=~/.gradle/caches/minecraft/net/minecraft/server/1.7.10/server-1.7.10.jar
-        if download_with_retry "$URL" "$OUTPUT" 5; then
-          echo "Server downloaded successfully"
-        else
-          echo "::warning::Server download failed, will try ForgeGradle default"
-        fi
+        # Download server jar - ForgeGradle expects minecraft_server.1.7.10.jar
+        download_with_retry "https://bmclapi2.bangbang93.com/version/1.7.10/server" \
+          "/tmp/mcpbot/Minecraft.Download/versions/1.7.10/minecraft_server.1.7.10.jar" 5
         
-    - name: Download Forge universal jar
-      run: |
-        download_with_retry() {
-          local url="$1"
-          local output="$2"
-          local max_retries="${3:-5}"
-          local retry=0
-          while [ $retry -lt $max_retries ]; do
-            retry=$((retry + 1))
-            echo "Attempt $retry/$max_retries: Downloading $url"
-            if curl -sL --connect-timeout 30 --max-time 300 -o "$output" "$url"; then
-              if [ -s "$output" ]; then
-                echo "Successfully downloaded to $output"
-                return 0
-              else
-                echo "Downloaded file is empty, retrying..."
-              fi
-            else
-              echo "Download failed (curl exit code: $?), retrying..."
-            fi
-            rm -f "$output"
-            sleep $((retry * 5))
-          done
-          echo "Failed to download $url after $max_retries attempts"
-          return 1
-        }
-        
-        URL="https://bmclapi2.bangbang93.com/maven/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar"
-        OUTPUT=~/.gradle/caches/minecraft/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar
-        if download_with_retry "$URL" "$OUTPUT" 5; then
-          echo "Forge universal downloaded successfully"
-        else
-          echo "::warning::Forge universal download failed, will try ForgeGradle default"
-        fi
+        echo "Client jar size: $(wc -c < /tmp/mcpbot/Minecraft.Download/versions/1.7.10/1.7.10.jar) bytes"
+        echo "Server jar size: $(wc -c < /tmp/mcpbot/Minecraft.Download/versions/1.7.10/minecraft_server.1.7.10.jar) bytes"
         
     - name: Download real forge.json and versions.json
       run: |
@@ -213,11 +143,16 @@ jobs:
         echo "Testing forge.json:"
         curl -s http://localhost/maven/net/minecraftforge/forge/json | head -c 200
         echo ""
+        echo "Testing client jar (HEAD):"
+        curl -sI http://localhost/Minecraft.Download/versions/1.7.10/1.7.10.jar | head -5
+        echo "Testing server jar (HEAD):"
+        curl -sI http://localhost/Minecraft.Download/versions/1.7.10/minecraft_server.1.7.10.jar | head -5
         
     - name: Add hosts entries
       run: |
         echo "127.0.0.1 export.mcpbot.bspk.rs" | sudo tee -a /etc/hosts
         echo "127.0.0.1 files.minecraftforge.net" | sudo tee -a /etc/hosts
+        echo "127.0.0.1 s3.amazonaws.com" | sudo tee -a /etc/hosts
         
     - name: Build with Gradle
       run: gradle build --stacktrace
